@@ -1,10 +1,10 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from PyPDF2 import PdfReader
 import os
 import uvicorn
 from pydantic_settings import BaseSettings
-import outetts
+import pyttsx3
+from fastapi import FastAPI, File, UploadFile, HTTPException
 
 app = FastAPI()
 
@@ -19,41 +19,19 @@ settings = Settings()
 # Directory to save temporary files
 UPLOAD_DIR = "./uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+from fastapi import FastAPI, File, UploadFile, HTTPException
 
-# Initialize OuteTTS model
-model_config = outetts.HFModelConfig_v2(
-    model_path="OuteAI/OuteTTS-0.3-1B",
-    tokenizer_path="OuteAI/OuteTTS-0.3-1B"
-)
-interface = outetts.InterfaceHF(model_version="0.3", cfg=model_config)
-
-# Load default male speaker
-interface.print_default_speakers()
-speaker = interface.load_default_speaker(name="en_male_1")
-
-# Function to clean text
-def clean_text(text: str) -> str:
-    """Clean and preprocess text to add natural pauses and improve flow."""
-    text = text.replace(".", "....")  # Adds a small pause at the end of sentences
-    text = text.replace(",", ",...")  # Adds a slight pause after commas
-    text = text.replace("!", "!...")  # Adds emphasis and pause at exclamation
-    text = text.replace("?", "?... hmm...")  # Adds a thinking sound
-    text = text.replace("think", "uhhh... think")  # Adds 'thinking' sounds
-    return text.strip()
+# Initialize TTS engine
+engine = pyttsx3.init()
+engine.setProperty('rate', 150)  # Decrease speaking rate for slower speech
+engine.setProperty('volume', 5.0)  # Set volume to maximum
 
 # Function to generate audio
 def generate_audio(text: str, output_path: str):
-    """Generate speech from text using OuteTTS model and save as a .wav file."""
+    """Generate speech from text using pyttsx3 and save as a .wav file."""
     try:
-        gen_cfg = outetts.GenerationConfig(
-            text=text,
-            temperature=0.4,
-            repetition_penalty=1.1,
-            max_length=4096,
-            speaker=speaker,
-        )
-        output = interface.generate(config=gen_cfg)
-        output.save(output_path)
+        engine.save_to_file(text, output_path)
+        engine.runAndWait()
         print(f"Audio generated successfully at {output_path}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating audio: {str(e)}")
@@ -83,11 +61,10 @@ async def read_page(file_path: str, page_number: int):
         if not page_text.strip():
             raise HTTPException(status_code=400, detail="No readable text on the page")
         
-        cleaned_text = clean_text(page_text)
         audio_path = os.path.join(UPLOAD_DIR, f"page_{page_number}.wav")
         
-        # Generate audio using OuteTTS
-        generate_audio(cleaned_text, audio_path)
+        # Generate audio using pyttsx3
+        generate_audio(page_text, audio_path)
         
         return FileResponse(audio_path, media_type="audio/wav", filename=f"page_{page_number}.wav")
     except Exception as e:
