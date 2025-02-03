@@ -5,6 +5,7 @@ import uvicorn
 from pydantic_settings import BaseSettings
 import pyttsx3
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
@@ -12,8 +13,15 @@ app = FastAPI()
 class Settings(BaseSettings):
     PORT: int = 8000
     ENV: str = "development"
-    BASE_URL: str = "http://localhost:8000"
+    BASE_URL: str = "http://localhost:3000"
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Allow requests only from your React frontend
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 settings = Settings()
 
 # Directory to save temporary files
@@ -34,7 +42,10 @@ def generate_audio(text: str, output_path: str):
         engine.runAndWait()
         print(f"Audio generated successfully at {output_path}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating audio: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating audio: {str(e)}"
+                            )
+    
+
 
 # Upload PDF endpoint
 @app.post("/upload-pdf/")
@@ -54,6 +65,7 @@ async def read_page(file_path: str, page_number: int):
     try:
         reader = PdfReader(file_path)
         
+        # Ensure page number is valid
         if page_number < 1 or page_number > len(reader.pages):
             raise HTTPException(status_code=400, detail="Invalid page number")
         
@@ -63,12 +75,15 @@ async def read_page(file_path: str, page_number: int):
         
         audio_path = os.path.join(UPLOAD_DIR, f"page_{page_number}.wav")
         
-        # Generate audio using pyttsx3
+        # Generate audio
         generate_audio(page_text, audio_path)
         
         return FileResponse(audio_path, media_type="audio/wav", filename=f"page_{page_number}.wav")
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error: {str(e)}")  # Log the error for debugging
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+
 
 # Root endpoint
 @app.get("/")
