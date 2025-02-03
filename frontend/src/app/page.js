@@ -1,8 +1,9 @@
+"use client"; // Required for using React hooks in Next.js App Router
+
 import { useState } from "react";
 import axios from "axios";
-import { PdfDocument } from "@ironsoftware/ironpdf";
 
-export default function AudioCooker() {
+export default function Home() {
   const [file, setFile] = useState(null);
   const [fileText, setFileText] = useState(""); // Extracted text
   const [audioSrc, setAudioSrc] = useState(null);
@@ -13,14 +14,15 @@ export default function AudioCooker() {
 
     setFile(selectedFile);
 
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
     try {
-      const reader = new FileReader();
-      reader.readAsArrayBuffer(selectedFile);
-      reader.onloadend = async () => {
-        const pdfDoc = await PdfDocument.fromBytes(new Uint8Array(reader.result));
-        const text = await pdfDoc.extractText(); // Extract text
-        setFileText(text);
-      };
+      const response = await axios.post("/api/extract-text", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setFileText(response.data.text);
     } catch (error) {
       console.error("Error processing PDF:", error);
       alert("Failed to process PDF");
@@ -31,9 +33,11 @@ export default function AudioCooker() {
     if (!fileText) return alert("Extract text first");
 
     try {
-      const response = await axios.post("http://127.0.0.1:5001/generate-audio", {
-        text: fileText,
-      }, { responseType: "blob" });
+      const response = await axios.post(
+        "http://127.0.0.1:5001/generate-audio",
+        { text: fileText },
+        { responseType: "blob" }
+      );
 
       setAudioSrc(URL.createObjectURL(response.data));
     } catch (error) {
