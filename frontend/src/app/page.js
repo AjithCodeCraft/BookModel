@@ -49,11 +49,14 @@ export default function Home() {
   // Fetch audio for the selected page
   const fetchPageAudio = async () => {
     if (!file) return alert("Please upload a PDF first.");
-
+  
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/read-page/`, {
-        params: { file_name: file.name, page_number: pageNumber },
+        params: { 
+          file_path: `./uploads/${file.name}`, // Ensure correct file path format
+          page_number: pageNumber 
+        },
       });
       setAudioSrc(response.request.responseURL);
     } catch (error) {
@@ -62,6 +65,7 @@ export default function Home() {
     }
     setLoading(false);
   };
+  
 
   return (
     <div className="container mx-auto p-6 text-center">
