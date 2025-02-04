@@ -31,7 +31,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 
 # Initialize TTS engine
 engine = pyttsx3.init()
-engine.setProperty('rate', 150)  # Decrease speaking rate for slower speech
+engine.setProperty('rate', 150)   
 engine.setProperty('volume', 5.0)  # Set volume to maximum
 
 # Function to generate audio

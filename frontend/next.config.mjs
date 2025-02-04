@@ -1,12 +1,9 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-    api: {
-        bodyParser: {
-          sizeLimit: "10mb", // Increase limit to 10MB
-        },
-      },
-    };
-    
-
+const nextConfig = {  
+  webpack: (config) => {  
+    config.resolve.alias.canvas = false;  
+    return config;  
+  },  
+};
 
 export default nextConfig;
