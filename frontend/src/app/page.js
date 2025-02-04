@@ -85,14 +85,30 @@ export default function Home() {
       </form>
 
       {fileUrl && (
-        <div>
-          <Document file={fileUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
-            <Page pageNumber={pageNumber} className="border rounded-lg shadow-md p-4" />
-          </Document>
-          <p className="mt-4 text-lg font-medium text-gray-700">
-            Page {pageNumber} of {numPages}
-          </p>
-          <div className="flex justify-center gap-4 mt-4">
+  <div className="flex justify-center mt-6">
+  <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-lg">
+  <div className="relative max-h-[500px] overflow-hidden bg-white">
+  <Document 
+    file={fileUrl} 
+    onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+    className="flex justify-center"
+  >
+    <Page 
+      pageNumber={pageNumber} 
+      width={350}  
+      className="border rounded-lg shadow-md mx-auto" 
+      renderMode="canvas"
+    />
+  </Document>
+</div>
+
+
+
+    <p className="mt-4 text-lg font-medium text-gray-700 text-center">
+      Page {pageNumber} of {numPages}
+    </p>
+
+    <div className="flex justify-center gap-4 mt-4">
             <button
               onClick={() => {
                 setAudioSrc(null);
@@ -113,15 +129,17 @@ export default function Home() {
             >
               Next
             </button>
-            <button
-              onClick={fetchPageAudio}
-              className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition-all"
-            >
-              {loading ? "Loading..." : "Play Audio"}
-            </button>
-          </div>
-        </div>
-      )}
+      <button
+        onClick={fetchPageAudio}
+        className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition-all"
+      >
+        {loading ? "Loading..." : "Play Audio"}
+      </button>
+    </div>
+  </div>
+</div>
+
+)}
 
       {audioSrc && (
         <audio controls autoPlay className="mt-6 w-full max-w-lg mx-auto">
