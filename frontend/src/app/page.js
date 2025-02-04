@@ -94,14 +94,20 @@ export default function Home() {
           </p>
           <div className="flex justify-center gap-4 mt-4">
             <button
-              onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
+              onClick={() => {
+                setAudioSrc(null);
+                setPageNumber((prev) => Math.max(prev - 1, 1));
+              }}
               disabled={pageNumber <= 1}
               className="bg-gray-500 text-white py-2 px-6 rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-all"
             >
               Previous
             </button>
             <button
-              onClick={() => setPageNumber((prev) => Math.min(prev + 1, numPages))}
+              onClick={() => {
+                setAudioSrc(null);
+                setPageNumber((prev) => Math.min(prev + 1, numPages));
+              }}
               disabled={pageNumber >= numPages}
               className="bg-gray-500 text-white py-2 px-6 rounded-lg hover:bg-gray-600 transition-all"
             >
