@@ -9,7 +9,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 export default function Home() {
   const [file, setFile] = useState(null);
-  const [filePath, setFilePath] = useState(null);
+  const [fileUrl, setFileUrl] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [numPages, setNumPages] = useState(null);
   const [audioSrc, setAudioSrc] = useState(null);
@@ -17,6 +17,16 @@ export default function Home() {
 
   const API_BASE_URL = "http://localhost:5001";
 
+  // Handle file selection and create an object URL for instant preview
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
+    setFileUrl(URL.createObjectURL(selectedFile)); // Create local URL for instant preview
+  };
+
+  // Upload PDF to backend
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) return alert("Please select a PDF file.");
@@ -25,24 +35,25 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/upload-pdf/`, formData, {
+      await axios.post(`${API_BASE_URL}/upload-pdf/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setFilePath(response.data.file_path.replace("http://localhost:3000", "http://localhost:5001"));
+      alert("PDF uploaded successfully!");
     } catch (error) {
       console.error("Upload Error:", error);
       alert("Failed to upload PDF");
     }
   };
 
+  // Fetch audio for the selected page
   const fetchPageAudio = async () => {
-    if (!filePath) return alert("Please upload a PDF first.");
+    if (!file) return alert("Please upload a PDF first.");
 
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/read-page/`, {
-        params: { file_path: filePath, page_number: pageNumber },
+        params: { file_name: file.name, page_number: pageNumber },
       });
       setAudioSrc(response.request.responseURL);
     } catch (error) {
@@ -60,36 +71,40 @@ export default function Home() {
         <input
           type="file"
           accept="application/pdf"
-          onChange={(e) => setFile(e.target.files[0])}
+          onChange={handleFileChange}
           required
           className="block w-full border border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <button type="submit" className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-all">Upload PDF</button>
+        <button type="submit" className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-all">
+          Upload PDF
+        </button>
       </form>
 
-      {filePath && (
+      {fileUrl && (
         <div>
-          <Document file={filePath} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
+          <Document file={fileUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
             <Page pageNumber={pageNumber} className="border rounded-lg shadow-md p-4" />
           </Document>
-          <p className="mt-4 text-lg font-medium text-gray-700">Page {pageNumber} of {numPages}</p>
+          <p className="mt-4 text-lg font-medium text-gray-700">
+            Page {pageNumber} of {numPages}
+          </p>
           <div className="flex justify-center gap-4 mt-4">
-            <button 
-              onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))} 
+            <button
+              onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
               disabled={pageNumber <= 1}
               className="bg-gray-500 text-white py-2 px-6 rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-all"
             >
               Previous
             </button>
-            <button 
-              onClick={() => setPageNumber((prev) => Math.min(prev + 1, numPages))} 
+            <button
+              onClick={() => setPageNumber((prev) => Math.min(prev + 1, numPages))}
               disabled={pageNumber >= numPages}
               className="bg-gray-500 text-white py-2 px-6 rounded-lg hover:bg-gray-600 transition-all"
             >
               Next
             </button>
-            <button 
-              onClick={fetchPageAudio} 
+            <button
+              onClick={fetchPageAudio}
               className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition-all"
             >
               {loading ? "Loading..." : "Play Audio"}
